@@ -1,7 +1,11 @@
 const video = document.getElementById('video');
+const info = document.getElementById('info');
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const info = document.getElementById('info');
+
+const canvasDominante = document.getElementById('canvasDominante');
+const ctxDominante = canvasDominante.getContext('2d');
 
 // CHECKBOXES
 const chkRojo = document.getElementById('chkRojo');
@@ -36,6 +40,7 @@ function procesarFrame() {
         NEGRO: 0
     };
 
+    // SEGMENTACIÓN
     for (let i = 0; i < data.length; i += 4) {
 
         const r = data[i];
@@ -44,7 +49,23 @@ function procesarFrame() {
 
         let detectado = false;
 
-        if (chkRojo.checked && r > 120 && r > g + 40 && r > b + 40) {
+        // ⚠️ COLORES MÁS ESPECÍFICOS PRIMERO
+
+        if (chkBlanco.checked && r > 200 && g > 200 && b > 200) {
+            data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
+            conteo.BLANCO++; detectado = true;
+
+        } else if (chkNegro.checked && r < 50 && g < 50 && b < 50) {
+            data[i] = 0; data[i + 1] = 0; data[i + 2] = 0;
+            conteo.NEGRO++; detectado = true;
+
+        } else if (chkNaranja.checked && r > 150 && g > 80 && b < 100) {
+            data[i] = 255; data[i + 1] = 165; data[i + 2] = 0;
+            conteo.NARANJA++; detectado = true;
+
+            // 🔻 PRIMARIOS AL FINAL (como querías)
+
+        } else if (chkRojo.checked && r > 120 && r > g + 40 && r > b + 40) {
             data[i] = 255; data[i + 1] = 0; data[i + 2] = 0;
             conteo.ROJO++; detectado = true;
 
@@ -55,20 +76,9 @@ function procesarFrame() {
         } else if (chkAzul.checked && b > 120 && b > r + 40 && b > g + 40) {
             data[i] = 0; data[i + 1] = 0; data[i + 2] = 255;
             conteo.AZUL++; detectado = true;
-
-        } else if (chkNaranja.checked && r > 150 && g > 80 && b < 100) {
-            data[i] = 255; data[i + 1] = 165; data[i + 2] = 0;
-            conteo.NARANJA++; detectado = true;
-
-        } else if (chkBlanco.checked && r > 200 && g > 200 && b > 200) {
-            data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
-            conteo.BLANCO++; detectado = true;
-
-        } else if (chkNegro.checked && r < 50 && g < 50 && b < 50) {
-            data[i] = 0; data[i + 1] = 0; data[i + 2] = 0;
-            conteo.NEGRO++; detectado = true;
         }
 
+        // Fondo amarillo
         if (!detectado) {
             data[i] = 255; data[i + 1] = 255; data[i + 2] = 0;
         }
@@ -86,6 +96,39 @@ function procesarFrame() {
             colorDominante = color;
         }
     }
+
+    // CANVAS SOLO COLOR DOMINANTE
+    ctxDominante.clearRect(0, 0, canvasDominante.width, canvasDominante.height);
+
+    const frameDominante = ctxDominante.createImageData(canvas.width, canvas.height);
+    const dataDominante = frameDominante.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+
+        let coincide = false;
+
+        if (colorDominante === "ROJO" && data[i] === 255 && data[i + 1] === 0 && data[i + 2] === 0) coincide = true;
+        if (colorDominante === "VERDE" && data[i] === 0 && data[i + 1] === 255 && data[i + 2] === 0) coincide = true;
+        if (colorDominante === "AZUL" && data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 255) coincide = true;
+        if (colorDominante === "NARANJA" && data[i] === 255 && data[i + 1] === 165 && data[i + 2] === 0) coincide = true;
+        if (colorDominante === "BLANCO" && data[i] === 255 && data[i + 1] === 255 && data[i + 2] === 255) coincide = true;
+        if (colorDominante === "NEGRO" && data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) coincide = true;
+
+        if (coincide) {
+            dataDominante[i] = data[i];
+            dataDominante[i + 1] = data[i + 1];
+            dataDominante[i + 2] = data[i + 2];
+            dataDominante[i + 3] = 255;
+        } else {
+            // 🟡 Fondo amarillo (lo que pediste)
+            dataDominante[i] = 255;
+            dataDominante[i + 1] = 255;
+            dataDominante[i + 2] = 0;
+            dataDominante[i + 3] = 255;
+        }
+    }
+
+    ctxDominante.putImageData(frameDominante, 0, 0);
 
     info.textContent = `Color dominante: ${colorDominante}`;
 
