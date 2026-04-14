@@ -1,78 +1,212 @@
 const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d')
 const info = document.getElementById('info');
 
-// Activar camara
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const canvasDominante = document.getElementById('canvasDominante');
+const ctxDominante = canvasDominante.getContext('2d');
+
+// CHECKBOXES
+const chkRojo = document.getElementById('chkRojo');
+const chkVerde = document.getElementById('chkVerde');
+const chkAzul = document.getElementById('chkAzul');
+const chkNaranja = document.getElementById('chkNaranja');
+const chkBlanco = document.getElementById('chkBlanco');
+const chkNegro = document.getElementById('chkNegro');
+
+// CONFIG
+const getConfig = () => ({
+    rMinRojo: +document.getElementById('rMinRojo').value,
+    rDiffG: +document.getElementById('rDiffG').value,
+    rDiffB: +document.getElementById('rDiffB').value,
+
+    gMinVerde: +document.getElementById('gMinVerde').value,
+    gDiffR: +document.getElementById('gDiffR').value,
+    gDiffB: +document.getElementById('gDiffB').value,
+
+    bMinAzul: +document.getElementById('bMinAzul').value,
+    bDiffR: +document.getElementById('bDiffR').value,
+    bDiffG: +document.getElementById('bDiffG').value,
+
+    rMinNaranja: +document.getElementById('rMinNaranja').value,
+    gMinNaranja: +document.getElementById('gMinNaranja').value,
+    bMaxNaranja: +document.getElementById('bMaxNaranja').value,
+
+    rMinBlanco: +document.getElementById('rMinBlanco').value,
+    gMinBlanco: +document.getElementById('gMinBlanco').value,
+    bMinBlanco: +document.getElementById('bMinBlanco').value,
+
+    rMaxNegro: +document.getElementById('rMaxNegro').value,
+    gMaxNegro: +document.getElementById('gMaxNegro').value,
+    bMaxNegro: +document.getElementById('bMaxNegro').value
+});
+
+// Cámara
 navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => {
-        video.srcObject = stream;
-        console.log("Camara activada correctamente")
-    }).catch(error => {
-        console.log("Error de dispositivo", error);
-        info.textContent = "Verificar permisos";
-    })
+    .then(stream => video.srcObject = stream)
+    .catch(() => info.textContent = "Verifica permisos de cámara");
 
-// Detección de colores por reglas heuristicas
-function detectarColor() {
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+// Esperar OpenCV
+function opencvReady() {
+    return typeof cv !== "undefined" && cv.imread;
+}
 
-    // Obtener datos por pixel
+video.addEventListener('play', procesarFrame);
+
+function procesarFrame() {
+
+    const config = getConfig();
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = frame.data;
 
-    // Variables para el area del objeto
-    let minX = canvas.width;
-    let minY = canvas.height;
-    let maxX = 0;
-    let maxY = 0;
+    let conteo = {
+        ROJO: 0,
+        VERDE: 0,
+        AZUL: 0,
+        NARANJA: 0,
+        BLANCO: 0,
+        NEGRO: 0
+    };
 
-    let colorDetectado = null;
+    // 🔥 DETECCIÓN DE COLOR (tu lógica intacta)
+    for (let i = 0; i < data.length; i += 4) {
 
-    //Recorrer los pixeles del 2 canva
-    for (let y = 0; y < canvas.height; y++) {
-        for (let x = 0; x < canvas.width; x++) {
-            const i = (y * canvas.width + x) * 4;
-            const r = data[i]
-            const g = data[i + 1]
-            const b = data[i + 2]
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
 
-            // Clasificaciones
-            if (r > 120 && r > g + 40 && r > b + 40) {
-                colorDetectado = "ROJO"
-            } else if (g > 120 && g > r + 40 && g > b + 40) {
-                colorDetectado = "VERDE"
-            } else if (b > 120 && b > r + 40 && b > g + 40) {
-                colorDetectado = "AZUL"
-            }
+        let detectado = false;
 
-            //Actualizar limites de las areas
-            if (colorDetectado) {
-                if (x > minX) minX = x;
-                if (y > minY) minY = y;
-                if (x > maxX) maxX = x;
-                if (y > maxY) maxY = y;
-            }
+        if (chkBlanco.checked && r > config.rMinBlanco && g > config.gMinBlanco && b > config.bMinBlanco) {
+            data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
+            conteo.BLANCO++; detectado = true;
+        }
+        else if (chkNegro.checked && r < config.rMaxNegro && g < config.gMaxNegro && b < config.bMaxNegro) {
+            data[i] = 0; data[i + 1] = 0; data[i + 2] = 0;
+            conteo.NEGRO++; detectado = true;
+        }
+        else if (chkNaranja.checked && r > config.rMinNaranja && g > config.gMinNaranja && b < config.bMaxNaranja) {
+            data[i] = 255; data[i + 1] = 165; data[i + 2] = 0;
+            conteo.NARANJA++; detectado = true;
+        }
+        else if (chkRojo.checked && r > config.rMinRojo && r > g + config.rDiffG && r > b + config.rDiffB) {
+            data[i] = 255; data[i + 1] = 0; data[i + 2] = 0;
+            conteo.ROJO++; detectado = true;
+        }
+        else if (chkVerde.checked && g > config.gMinVerde && g > r + config.gDiffR && g > b + config.gDiffB) {
+            data[i] = 0; data[i + 1] = 255; data[i + 2] = 0;
+            conteo.VERDE++; detectado = true;
+        }
+        else if (chkAzul.checked && b > config.bMinAzul && b > r + config.bDiffR && b > g + config.bDiffG) {
+            data[i] = 0; data[i + 1] = 0; data[i + 2] = 255;
+            conteo.AZUL++; detectado = true;
+        }
+
+        if (!detectado) {
+            data[i] = 255;
+            data[i + 1] = 255;
+            data[i + 2] = 0;
         }
     }
 
-    //Dibujar el rectangulo de captura
-    if (maxX > minX && maxY > minY) {
-        const w = maxX - minX; // Ancho del rectángulo
-        const h = maxY - minY; // Alto del rectángulo
-        ctx.strokeStyle = "lime"; // Color del borde del rectángulo
-        ctx.lineWidth = 2; // Grosor del borde
-        ctx.strokeRect(minX, minY, w, h); // Dibujar rectángulo
-        info.textContent = `Color: ${ colorDetectado } | X:${ minX } Y:${ minY } W:${ w } H:${ h }`;
-    } else {
-        info.textContent = "No se detecta objeto"; // Mensaje si no se detecta nada
+    ctx.putImageData(frame, 0, 0);
+
+    // 🔥 COLOR DOMINANTE
+    let colorDominante = "NINGUNO";
+    let max = 0;
+
+    for (let color in conteo) {
+        if (conteo[color] > max) {
+            max = conteo[color];
+            colorDominante = color;
+        }
     }
 
-    // Volver a ejecutar la función en el siguiente fotograma
-    requestAnimationFrame(detectarColor);
-}
+    // 🔥 CANVAS DOMINANTE
+    const frameDominante = ctxDominante.createImageData(canvas.width, canvas.height);
+    const dataDominante = frameDominante.data;
 
-// Iniciar detección cuando el vídeo comience a reproducirse
-video.addEventListener('play', () => {
-    detectarColor();
-});
+    for (let i = 0; i < data.length; i += 4) {
+
+        let coincide = false;
+
+        if (colorDominante === "ROJO" && data[i] === 255 && data[i + 1] === 0 && data[i + 2] === 0) coincide = true;
+        if (colorDominante === "VERDE" && data[i] === 0 && data[i + 1] === 255 && data[i + 2] === 0) coincide = true;
+        if (colorDominante === "AZUL" && data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 255) coincide = true;
+        if (colorDominante === "NARANJA" && data[i] === 255 && data[i + 1] === 165 && data[i + 2] === 0) coincide = true;
+        if (colorDominante === "BLANCO" && data[i] === 255 && data[i + 1] === 255 && data[i + 2] === 255) coincide = true;
+        if (colorDominante === "NEGRO" && data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) coincide = true;
+
+        if (coincide) {
+            dataDominante[i] = data[i];
+            dataDominante[i + 1] = data[i + 1];
+            dataDominante[i + 2] = data[i + 2];
+            dataDominante[i + 3] = 255;
+        } else {
+            dataDominante[i] = 255;
+            dataDominante[i + 1] = 255;
+            dataDominante[i + 2] = 0;
+            dataDominante[i + 3] = 255;
+        }
+    }
+
+    ctxDominante.putImageData(frameDominante, 0, 0);
+
+    // 🔥 OPENCV (formas)
+    let figura = "Ninguna";
+
+    if (opencvReady()) {
+
+        let src = cv.imread(canvasDominante);
+        let gray = new cv.Mat();
+        let blur = new cv.Mat();
+        let thresh = new cv.Mat();
+        let contours = new cv.MatVector();
+        let hierarchy = new cv.Mat();
+
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        cv.GaussianBlur(gray, blur, new cv.Size(5, 5), 0);
+        cv.threshold(blur, thresh, 50, 255, cv.THRESH_BINARY_INV);
+
+        cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+        for (let i = 0; i < contours.size(); i++) {
+
+            let cnt = contours.get(i);
+            let area = cv.contourArea(cnt);
+
+            if (area < 1500) continue;
+
+            let approx = new cv.Mat();
+            let peri = cv.arcLength(cnt, true);
+
+            cv.approxPolyDP(cnt, approx, 0.04 * peri, true);
+
+            let vertices = approx.rows;
+
+            if (vertices === 3) figura = "Triángulo";
+            else if (vertices === 4) figura = "Rectángulo";
+            else if (vertices > 4) figura = "Círculo";
+
+            cv.drawContours(src, contours, i, [255, 0, 0, 255], 3);
+
+            approx.delete();
+        }
+
+        cv.imshow(canvasDominante, src);
+
+        src.delete();
+        gray.delete();
+        blur.delete();
+        thresh.delete();
+        contours.delete();
+        hierarchy.delete();
+    }
+
+    info.textContent = `Color dominante: ${colorDominante} | Figura: ${figura}`;
+
+    requestAnimationFrame(procesarFrame);
+}

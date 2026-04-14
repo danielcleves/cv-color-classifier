@@ -1,16 +1,83 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seguimiento de objetos</title>
     <link rel="stylesheet" href="CSS/styles.css">
 </head>
+
 <body>
+
+    ```
     <h2>Seguimiento objeto por color</h2>
+
     <video id="video" width="640" height="480" autoplay playsinline></video>
     <canvas id="canvas" width="640" height="480"></canvas>
+    <canvas id="canvasDominante" width="640" height="480"></canvas>
+
     <p id="info"></p>
+
+    <!-- ACTIVAR COLORES -->
+    <div>
+        <h3>Colores activos</h3>
+        <label><input type="checkbox" id="chkRojo" checked> Rojo</label>
+        <label><input type="checkbox" id="chkVerde" checked> Verde</label>
+        <label><input type="checkbox" id="chkAzul" checked> Azul</label>
+        <label><input type="checkbox" id="chkNaranja" checked> Naranja</label>
+        <label><input type="checkbox" id="chkBlanco" checked> Blanco</label>
+        <label><input type="checkbox" id="chkNegro" checked> Negro</label>
+    </div>
+
+    <hr>
+
+    <!-- CONTROLES DE RANGO -->
+    <div>
+        <h3>Ajustes de detección</h3>
+
+        <!-- ROJO -->
+        <h4>Rojo</h4>
+        <label>R mínimo: <input type="range" id="rMinRojo" min="0" max="255" value="120"></label><br>
+        <label>Diferencia con G: <input type="range" id="rDiffG" min="0" max="255" value="40"></label><br>
+        <label>Diferencia con B: <input type="range" id="rDiffB" min="0" max="255" value="40"></label>
+
+        <!-- VERDE -->
+        <h4>Verde</h4>
+        <label>G mínimo: <input type="range" id="gMinVerde" min="0" max="255" value="120"></label><br>
+        <label>Diferencia con R: <input type="range" id="gDiffR" min="0" max="255" value="40"></label><br>
+        <label>Diferencia con B: <input type="range" id="gDiffB" min="0" max="255" value="40"></label>
+
+        <!-- AZUL -->
+        <h4>Azul</h4>
+        <label>B mínimo: <input type="range" id="bMinAzul" min="0" max="255" value="120"></label><br>
+        <label>Diferencia con R: <input type="range" id="bDiffR" min="0" max="255" value="40"></label><br>
+        <label>Diferencia con G: <input type="range" id="bDiffG" min="0" max="255" value="40"></label>
+
+        <!-- NARANJA -->
+        <h4>Naranja</h4>
+        <label>R mínimo: <input type="range" id="rMinNaranja" min="0" max="255" value="150"></label><br>
+        <label>G mínimo: <input type="range" id="gMinNaranja" min="0" max="255" value="80"></label><br>
+        <label>B máximo: <input type="range" id="bMaxNaranja" min="0" max="255" value="100"></label>
+
+        <!-- BLANCO -->
+        <h4>Blanco</h4>
+        <label>R mínimo: <input type="range" id="rMinBlanco" min="0" max="255" value="200"></label><br>
+        <label>G mínimo: <input type="range" id="gMinBlanco" min="0" max="255" value="200"></label><br>
+        <label>B mínimo: <input type="range" id="bMinBlanco" min="0" max="255" value="200"></label>
+
+        <!-- NEGRO -->
+        <h4>Negro</h4>
+        <label>R máximo: <input type="range" id="rMaxNegro" min="0" max="255" value="50"></label><br>
+        <label>G máximo: <input type="range" id="gMaxNegro" min="0" max="255" value="50"></label><br>
+        <label>B máximo: <input type="range" id="bMaxNegro" min="0" max="255" value="50"></label>
+
+    </div>
+
+    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
     <script src="JS/codigo.js"></script>
+
 </body>
+
 </html>
