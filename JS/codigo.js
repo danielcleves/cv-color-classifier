@@ -15,16 +15,48 @@ const chkNaranja = document.getElementById('chkNaranja');
 const chkBlanco = document.getElementById('chkBlanco');
 const chkNegro = document.getElementById('chkNegro');
 
+// FUNCIÓN PARA LEER SLIDERS UNA VEZ POR FRAME
+const getConfig = () => ({
+    rMinRojo: parseInt(document.getElementById('rMinRojo').value),
+    rDiffG: parseInt(document.getElementById('rDiffG').value),
+    rDiffB: parseInt(document.getElementById('rDiffB').value),
+
+    gMinVerde: parseInt(document.getElementById('gMinVerde').value),
+    gDiffR: parseInt(document.getElementById('gDiffR').value),
+    gDiffB: parseInt(document.getElementById('gDiffB').value),
+
+    bMinAzul: parseInt(document.getElementById('bMinAzul').value),
+    bDiffR: parseInt(document.getElementById('bDiffR').value),
+    bDiffG: parseInt(document.getElementById('bDiffG').value),
+
+    rMinNaranja: parseInt(document.getElementById('rMinNaranja').value),
+    gMinNaranja: parseInt(document.getElementById('gMinNaranja').value),
+    bMaxNaranja: parseInt(document.getElementById('bMaxNaranja').value),
+
+    rMinBlanco: parseInt(document.getElementById('rMinBlanco').value),
+    gMinBlanco: parseInt(document.getElementById('gMinBlanco').value),
+    bMinBlanco: parseInt(document.getElementById('bMinBlanco').value),
+
+    rMaxNegro: parseInt(document.getElementById('rMaxNegro').value),
+    gMaxNegro: parseInt(document.getElementById('gMaxNegro').value),
+    bMaxNegro: parseInt(document.getElementById('bMaxNegro').value)
+
+
+});
+
 // Cámara
 navigator.mediaDevices.getUserMedia({ video: true })
     .then(stream => {
         video.srcObject = stream;
     })
-    .catch(error => {
-        info.textContent = "Verificar permisos";
+    .catch(() => {
+        info.textContent = "Verificar permisos de cámara";
     });
 
 function procesarFrame() {
+
+
+    const config = getConfig(); // 🔥 SOLO UNA VEZ POR FRAME
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -40,7 +72,6 @@ function procesarFrame() {
         NEGRO: 0
     };
 
-    // SEGMENTACIÓN
     for (let i = 0; i < data.length; i += 4) {
 
         const r = data[i];
@@ -49,38 +80,70 @@ function procesarFrame() {
 
         let detectado = false;
 
-        // ⚠️ COLORES MÁS ESPECÍFICOS PRIMERO
-
-        if (chkBlanco.checked && r > 200 && g > 200 && b > 200) {
+        if (
+            chkBlanco.checked &&
+            r > config.rMinBlanco &&
+            g > config.gMinBlanco &&
+            b > config.bMinBlanco
+        ) {
             data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
             conteo.BLANCO++; detectado = true;
+        }
 
-        } else if (chkNegro.checked && r < 50 && g < 50 && b < 50) {
+        else if (
+            chkNegro.checked &&
+            r < config.rMaxNegro &&
+            g < config.gMaxNegro &&
+            b < config.bMaxNegro
+        ) {
             data[i] = 0; data[i + 1] = 0; data[i + 2] = 0;
             conteo.NEGRO++; detectado = true;
+        }
 
-        } else if (chkNaranja.checked && r > 150 && g > 80 && b < 100) {
+        else if (
+            chkNaranja.checked &&
+            r > config.rMinNaranja &&
+            g > config.gMinNaranja &&
+            b < config.bMaxNaranja
+        ) {
             data[i] = 255; data[i + 1] = 165; data[i + 2] = 0;
             conteo.NARANJA++; detectado = true;
+        }
 
-            // 🔻 PRIMARIOS AL FINAL (como querías)
-
-        } else if (chkRojo.checked && r > 120 && r > g + 40 && r > b + 40) {
+        else if (
+            chkRojo.checked &&
+            r > config.rMinRojo &&
+            r > g + config.rDiffG &&
+            r > b + config.rDiffB
+        ) {
             data[i] = 255; data[i + 1] = 0; data[i + 2] = 0;
             conteo.ROJO++; detectado = true;
+        }
 
-        } else if (chkVerde.checked && g > 120 && g > r + 40 && g > b + 40) {
+        else if (
+            chkVerde.checked &&
+            g > config.gMinVerde &&
+            g > r + config.gDiffR &&
+            g > b + config.gDiffB
+        ) {
             data[i] = 0; data[i + 1] = 255; data[i + 2] = 0;
             conteo.VERDE++; detectado = true;
+        }
 
-        } else if (chkAzul.checked && b > 120 && b > r + 40 && b > g + 40) {
+        else if (
+            chkAzul.checked &&
+            b > config.bMinAzul &&
+            b > r + config.bDiffR &&
+            b > g + config.bDiffG
+        ) {
             data[i] = 0; data[i + 1] = 0; data[i + 2] = 255;
             conteo.AZUL++; detectado = true;
         }
 
-        // Fondo amarillo
         if (!detectado) {
-            data[i] = 255; data[i + 1] = 255; data[i + 2] = 0;
+            data[i] = 255;
+            data[i + 1] = 255;
+            data[i + 2] = 0;
         }
     }
 
@@ -96,9 +159,6 @@ function procesarFrame() {
             colorDominante = color;
         }
     }
-
-    // CANVAS SOLO COLOR DOMINANTE
-    ctxDominante.clearRect(0, 0, canvasDominante.width, canvasDominante.height);
 
     const frameDominante = ctxDominante.createImageData(canvas.width, canvas.height);
     const dataDominante = frameDominante.data;
@@ -120,7 +180,6 @@ function procesarFrame() {
             dataDominante[i + 2] = data[i + 2];
             dataDominante[i + 3] = 255;
         } else {
-            // 🟡 Fondo amarillo (lo que pediste)
             dataDominante[i] = 255;
             dataDominante[i + 1] = 255;
             dataDominante[i + 2] = 0;
@@ -130,11 +189,11 @@ function procesarFrame() {
 
     ctxDominante.putImageData(frameDominante, 0, 0);
 
-    info.textContent = `Color dominante: ${colorDominante}`;
+    info.textContent = `Color dominante: ${colorDominante} `;
 
     requestAnimationFrame(procesarFrame);
+
+
 }
 
-video.addEventListener('play', () => {
-    procesarFrame();
-});
+video.addEventListener('play', procesarFrame);
