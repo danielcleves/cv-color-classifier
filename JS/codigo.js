@@ -15,51 +15,50 @@ const chkNaranja = document.getElementById('chkNaranja');
 const chkBlanco = document.getElementById('chkBlanco');
 const chkNegro = document.getElementById('chkNegro');
 
-// FUNCIÓN PARA LEER SLIDERS UNA VEZ POR FRAME
+// CONFIG
 const getConfig = () => ({
-    rMinRojo: parseInt(document.getElementById('rMinRojo').value),
-    rDiffG: parseInt(document.getElementById('rDiffG').value),
-    rDiffB: parseInt(document.getElementById('rDiffB').value),
+    rMinRojo: +document.getElementById('rMinRojo').value,
+    rDiffG: +document.getElementById('rDiffG').value,
+    rDiffB: +document.getElementById('rDiffB').value,
 
-    gMinVerde: parseInt(document.getElementById('gMinVerde').value),
-    gDiffR: parseInt(document.getElementById('gDiffR').value),
-    gDiffB: parseInt(document.getElementById('gDiffB').value),
+    gMinVerde: +document.getElementById('gMinVerde').value,
+    gDiffR: +document.getElementById('gDiffR').value,
+    gDiffB: +document.getElementById('gDiffB').value,
 
-    bMinAzul: parseInt(document.getElementById('bMinAzul').value),
-    bDiffR: parseInt(document.getElementById('bDiffR').value),
-    bDiffG: parseInt(document.getElementById('bDiffG').value),
+    bMinAzul: +document.getElementById('bMinAzul').value,
+    bDiffR: +document.getElementById('bDiffR').value,
+    bDiffG: +document.getElementById('bDiffG').value,
 
-    rMinNaranja: parseInt(document.getElementById('rMinNaranja').value),
-    gMinNaranja: parseInt(document.getElementById('gMinNaranja').value),
-    bMaxNaranja: parseInt(document.getElementById('bMaxNaranja').value),
+    rMinNaranja: +document.getElementById('rMinNaranja').value,
+    gMinNaranja: +document.getElementById('gMinNaranja').value,
+    bMaxNaranja: +document.getElementById('bMaxNaranja').value,
 
-    rMinBlanco: parseInt(document.getElementById('rMinBlanco').value),
-    gMinBlanco: parseInt(document.getElementById('gMinBlanco').value),
-    bMinBlanco: parseInt(document.getElementById('bMinBlanco').value),
+    rMinBlanco: +document.getElementById('rMinBlanco').value,
+    gMinBlanco: +document.getElementById('gMinBlanco').value,
+    bMinBlanco: +document.getElementById('bMinBlanco').value,
 
-    rMaxNegro: parseInt(document.getElementById('rMaxNegro').value),
-    gMaxNegro: parseInt(document.getElementById('gMaxNegro').value),
-    bMaxNegro: parseInt(document.getElementById('bMaxNegro').value)
-
-
+    rMaxNegro: +document.getElementById('rMaxNegro').value,
+    gMaxNegro: +document.getElementById('gMaxNegro').value,
+    bMaxNegro: +document.getElementById('bMaxNegro').value
 });
 
 // Cámara
 navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => {
-        video.srcObject = stream;
-    })
-    .catch(() => {
-        info.textContent = "Verificar permisos de cámara";
-    });
+    .then(stream => video.srcObject = stream)
+    .catch(() => info.textContent = "Verifica permisos de cámara");
+
+// Esperar OpenCV
+function opencvReady() {
+    return typeof cv !== "undefined" && cv.imread;
+}
+
+video.addEventListener('play', procesarFrame);
 
 function procesarFrame() {
 
-
-    const config = getConfig(); // 🔥 SOLO UNA VEZ POR FRAME
+    const config = getConfig();
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
     const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = frame.data;
 
@@ -72,6 +71,7 @@ function procesarFrame() {
         NEGRO: 0
     };
 
+    // 🔥 DETECCIÓN DE COLOR (tu lógica intacta)
     for (let i = 0; i < data.length; i += 4) {
 
         const r = data[i];
@@ -80,62 +80,27 @@ function procesarFrame() {
 
         let detectado = false;
 
-        if (
-            chkBlanco.checked &&
-            r > config.rMinBlanco &&
-            g > config.gMinBlanco &&
-            b > config.bMinBlanco
-        ) {
+        if (chkBlanco.checked && r > config.rMinBlanco && g > config.gMinBlanco && b > config.bMinBlanco) {
             data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
             conteo.BLANCO++; detectado = true;
         }
-
-        else if (
-            chkNegro.checked &&
-            r < config.rMaxNegro &&
-            g < config.gMaxNegro &&
-            b < config.bMaxNegro
-        ) {
+        else if (chkNegro.checked && r < config.rMaxNegro && g < config.gMaxNegro && b < config.bMaxNegro) {
             data[i] = 0; data[i + 1] = 0; data[i + 2] = 0;
             conteo.NEGRO++; detectado = true;
         }
-
-        else if (
-            chkNaranja.checked &&
-            r > config.rMinNaranja &&
-            g > config.gMinNaranja &&
-            b < config.bMaxNaranja
-        ) {
+        else if (chkNaranja.checked && r > config.rMinNaranja && g > config.gMinNaranja && b < config.bMaxNaranja) {
             data[i] = 255; data[i + 1] = 165; data[i + 2] = 0;
             conteo.NARANJA++; detectado = true;
         }
-
-        else if (
-            chkRojo.checked &&
-            r > config.rMinRojo &&
-            r > g + config.rDiffG &&
-            r > b + config.rDiffB
-        ) {
+        else if (chkRojo.checked && r > config.rMinRojo && r > g + config.rDiffG && r > b + config.rDiffB) {
             data[i] = 255; data[i + 1] = 0; data[i + 2] = 0;
             conteo.ROJO++; detectado = true;
         }
-
-        else if (
-            chkVerde.checked &&
-            g > config.gMinVerde &&
-            g > r + config.gDiffR &&
-            g > b + config.gDiffB
-        ) {
+        else if (chkVerde.checked && g > config.gMinVerde && g > r + config.gDiffR && g > b + config.gDiffB) {
             data[i] = 0; data[i + 1] = 255; data[i + 2] = 0;
             conteo.VERDE++; detectado = true;
         }
-
-        else if (
-            chkAzul.checked &&
-            b > config.bMinAzul &&
-            b > r + config.bDiffR &&
-            b > g + config.bDiffG
-        ) {
+        else if (chkAzul.checked && b > config.bMinAzul && b > r + config.bDiffR && b > g + config.bDiffG) {
             data[i] = 0; data[i + 1] = 0; data[i + 2] = 255;
             conteo.AZUL++; detectado = true;
         }
@@ -149,7 +114,7 @@ function procesarFrame() {
 
     ctx.putImageData(frame, 0, 0);
 
-    // COLOR DOMINANTE
+    // 🔥 COLOR DOMINANTE
     let colorDominante = "NINGUNO";
     let max = 0;
 
@@ -160,6 +125,7 @@ function procesarFrame() {
         }
     }
 
+    // 🔥 CANVAS DOMINANTE
     const frameDominante = ctxDominante.createImageData(canvas.width, canvas.height);
     const dataDominante = frameDominante.data;
 
@@ -189,11 +155,58 @@ function procesarFrame() {
 
     ctxDominante.putImageData(frameDominante, 0, 0);
 
-    info.textContent = `Color dominante: ${colorDominante} `;
+    // 🔥 OPENCV (formas)
+    let figura = "Ninguna";
+
+    if (opencvReady()) {
+
+        let src = cv.imread(canvasDominante);
+        let gray = new cv.Mat();
+        let blur = new cv.Mat();
+        let thresh = new cv.Mat();
+        let contours = new cv.MatVector();
+        let hierarchy = new cv.Mat();
+
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        cv.GaussianBlur(gray, blur, new cv.Size(5, 5), 0);
+        cv.threshold(blur, thresh, 50, 255, cv.THRESH_BINARY_INV);
+
+        cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+        for (let i = 0; i < contours.size(); i++) {
+
+            let cnt = contours.get(i);
+            let area = cv.contourArea(cnt);
+
+            if (area < 1500) continue;
+
+            let approx = new cv.Mat();
+            let peri = cv.arcLength(cnt, true);
+
+            cv.approxPolyDP(cnt, approx, 0.04 * peri, true);
+
+            let vertices = approx.rows;
+
+            if (vertices === 3) figura = "Triángulo";
+            else if (vertices === 4) figura = "Rectángulo";
+            else if (vertices > 4) figura = "Círculo";
+
+            cv.drawContours(src, contours, i, [255, 0, 0, 255], 3);
+
+            approx.delete();
+        }
+
+        cv.imshow(canvasDominante, src);
+
+        src.delete();
+        gray.delete();
+        blur.delete();
+        thresh.delete();
+        contours.delete();
+        hierarchy.delete();
+    }
+
+    info.textContent = `Color dominante: ${colorDominante} | Figura: ${figura}`;
 
     requestAnimationFrame(procesarFrame);
-
-
 }
-
-video.addEventListener('play', procesarFrame);
