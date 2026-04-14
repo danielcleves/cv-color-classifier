@@ -7,7 +7,7 @@ const ctxForma = canvasForma.getContext('2d');
 
 const info = document.getElementById('info');
 
-// Activar cámara
+// 🎥 Activar cámara
 navigator.mediaDevices.getUserMedia({ video: true })
     .then(stream => {
         video.srcObject = stream;
@@ -18,103 +18,96 @@ navigator.mediaDevices.getUserMedia({ video: true })
         info.textContent = "Verificar permisos";
     });
 
-// Detección principal
-function detectarColorYForma() {
 
-    // Dibujar video en ambos canvas
+// 🔥 FUNCIÓN PRINCIPAL
+function procesarFrame() {
+
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    ctxForma.drawImage(video, 0, 0, canvasForma.width, canvasForma.height);
 
     const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = frame.data;
 
-    let minX = canvas.width;
-    let minY = canvas.height;
-    let maxX = 0;
-    let maxY = 0;
+    // 🔢 CONTADORES
+    let conteo = {
+        ROJO: 0,
+        VERDE: 0,
+        AZUL: 0,
+        NARANJA: 0,
+        BLANCO: 0,
+        NEGRO: 0,
+        AMARILLO: 0
+    };
 
-    let colorDetectado = null;
+    // Recorrer píxeles
+    for (let i = 0; i < data.length; i += 4) {
 
-    // 🔴 DETECCIÓN DE COLOR
-    for (let y = 0; y < canvas.height; y++) {
-        for (let x = 0; x < canvas.width; x++) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
 
-            const i = (y * canvas.width + x) * 4;
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
+        // 🔴 ROJO
+        if (r > 120 && r > g + 40 && r > b + 40) {
+            data[i] = 255; data[i + 1] = 0; data[i + 2] = 0;
+            conteo.ROJO++;
 
-            let esColor = false;
+            // 🟢 VERDE
+        } else if (g > 120 && g > r + 40 && g > b + 40) {
+            data[i] = 0; data[i + 1] = 255; data[i + 2] = 0;
+            conteo.VERDE++;
 
-            if (r > 120 && r > g + 40 && r > b + 40) {
-                colorDetectado = "ROJO";
-                esColor = true;
+            // 🔵 AZUL
+        } else if (b > 120 && b > r + 40 && b > g + 40) {
+            data[i] = 0; data[i + 1] = 0; data[i + 2] = 255;
+            conteo.AZUL++;
 
-            } else if (g > 120 && g > r + 40 && g > b + 40) {
-                colorDetectado = "VERDE";
-                esColor = true;
+            // 🟠 NARANJA
+        } else if (r > 150 && g > 80 && b < 100) {
+            data[i] = 255; data[i + 1] = 165; data[i + 2] = 0;
+            conteo.NARANJA++;
 
-            } else if (b > 120 && b > r + 40 && b > g + 40) {
-                colorDetectado = "AZUL";
-                esColor = true;
+            // ⚪ BLANCO
+        } else if (r > 200 && g > 200 && b > 200) {
+            data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
+            conteo.BLANCO++;
 
-                // 🟠 NARANJA
-            } else if (r > 150 && g > 80 && b < 100) {
-                colorDetectado = "NARANJA";
-                esColor = true;
+            // ⚫ NEGRO
+        } else if (r < 50 && g < 50 && b < 50) {
+            data[i] = 0; data[i + 1] = 0; data[i + 2] = 0;
+            conteo.NEGRO++;
 
-                // ⚪ BLANCO
-            }
-
-            if (esColor) {
-                if (x < minX) minX = x;
-                if (y < minY) minY = y;
-                if (x > maxX) maxX = x;
-                if (y > maxY) maxY = y;
-            }
-        }
-    }
-
-    let forma = "Ninguna";
-
-    // 🟩 DETECCIÓN DE FORMA
-    if (maxX > minX && maxY > minY) {
-
-        const w = maxX - minX;
-        const h = maxY - minY;
-
-        // Dibujar bounding box en canvas original
-        ctx.strokeStyle = "lime";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(minX, minY, w, h);
-
-        // 👉 Clasificación simple de forma
-        const relacion = w / h;
-
-        if (relacion > 0.8 && relacion < 1.2) {
-            forma = "CIRCULO";
+            // 🟡 OTROS
         } else {
-            forma = "RECTANGULO";
+            data[i] = 255; data[i + 1] = 255; data[i + 2] = 0;
+            conteo.AMARILLO++;
         }
-
-        // Dibujar en canvas de forma
-        ctxForma.strokeStyle = "red";
-        ctxForma.lineWidth = 3;
-        ctxForma.strokeRect(minX, minY, w, h);
-
-        ctxForma.font = "20px Arial";
-        ctxForma.fillStyle = "yellow";
-        ctxForma.fillText(forma, minX, minY - 10);
-
-        info.textContent = `Color: ${colorDetectado} | Forma: ${forma}`;
-    } else {
-        info.textContent = "No se detecta objeto";
     }
 
-    requestAnimationFrame(detectarColorYForma);
+    // Dibujar imagen procesada
+    ctxForma.putImageData(frame, 0, 0);
+
+    // 🧠 Encontrar color dominante
+    let colorDominante = "NINGUNO";
+    let max = 0;
+
+    for (let color in conteo) {
+
+        // 🚫 Ignorar amarillo
+        if (color === "AMARILLO") continue;
+
+        if (conteo[color] > max) {
+            max = conteo[color];
+            colorDominante = color;
+        }
+    }
+
+    // Mostrar resultado
+    info.textContent = `Color dominante: ${colorDominante}`;
+
+    requestAnimationFrame(procesarFrame);
 }
 
-// Iniciar
+
+// ▶️ Iniciar
 video.addEventListener('play', () => {
-    detectarColorYForma();
+    procesarFrame();
 });
