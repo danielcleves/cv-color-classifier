@@ -48,8 +48,8 @@ function detectarColor() {
 
             //Actualizar limites de las areas
             if (colorDetectado) {
-                if (x > minX) minX = x;
-                if (y > minY) minY = y;
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
                 if (x > maxX) maxX = x;
                 if (y > maxY) maxY = y;
             }
