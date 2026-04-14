@@ -1,13 +1,9 @@
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
-const canvasForma = document.getElementById('canvasForma');
-
 const ctx = canvas.getContext('2d');
-const ctxForma = canvasForma.getContext('2d');
-
 const info = document.getElementById('info');
 
-// ✅ CHECKBOXES
+// CHECKBOXES
 const chkRojo = document.getElementById('chkRojo');
 const chkVerde = document.getElementById('chkVerde');
 const chkAzul = document.getElementById('chkAzul');
@@ -15,7 +11,7 @@ const chkNaranja = document.getElementById('chkNaranja');
 const chkBlanco = document.getElementById('chkBlanco');
 const chkNegro = document.getElementById('chkNegro');
 
-// 🎥 Cámara
+// Cámara
 navigator.mediaDevices.getUserMedia({ video: true })
     .then(stream => {
         video.srcObject = stream;
@@ -40,7 +36,6 @@ function procesarFrame() {
         NEGRO: 0
     };
 
-    // 🧩 PRIMER PASO: SEGMENTACIÓN + CONTEO
     for (let i = 0; i < data.length; i += 4) {
 
         const r = data[i];
@@ -74,16 +69,14 @@ function procesarFrame() {
             conteo.NEGRO++; detectado = true;
         }
 
-        // fondo amarillo
         if (!detectado) {
             data[i] = 255; data[i + 1] = 255; data[i + 2] = 0;
         }
     }
 
-    // Mostrar segmentación en canvas
     ctx.putImageData(frame, 0, 0);
 
-    // 🧠 COLOR DOMINANTE
+    // COLOR DOMINANTE
     let colorDominante = "NINGUNO";
     let max = 0;
 
@@ -94,73 +87,7 @@ function procesarFrame() {
         }
     }
 
-    // 🟩 SEGUNDO PASO: AISLAR OBJETO DOMINANTE
-    let minX = canvas.width, minY = canvas.height;
-    let maxX = 0, maxY = 0;
-    let area = 0;
-
-    for (let y = 0; y < canvas.height; y++) {
-        for (let x = 0; x < canvas.width; x++) {
-
-            const i = (y * canvas.width + x) * 4;
-
-            let coincide = false;
-
-            if (colorDominante === "ROJO" && data[i] === 255 && data[i + 1] === 0) coincide = true;
-            if (colorDominante === "VERDE" && data[i + 1] === 255) coincide = true;
-            if (colorDominante === "AZUL" && data[i + 2] === 255) coincide = true;
-            if (colorDominante === "NARANJA" && data[i] === 255 && data[i + 1] === 165) coincide = true;
-            if (colorDominante === "BLANCO" && data[i] === 255 && data[i + 1] === 255 && data[i + 2] === 255) coincide = true;
-            if (colorDominante === "NEGRO" && data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) coincide = true;
-
-            if (coincide) {
-                area++;
-
-                if (x < minX) minX = x;
-                if (y < minY) minY = y;
-                if (x > maxX) maxX = x;
-                if (y > maxY) maxY = y;
-            }
-        }
-    }
-
-    ctxForma.clearRect(0, 0, canvasForma.width, canvasForma.height);
-
-    let forma = "NINGUNA";
-
-    if (area > 100) {
-
-        const w = maxX - minX;
-        const h = maxY - minY;
-
-        const relacion = w / h;
-        const areaBox = w * h;
-        const fillRatio = area / areaBox;
-
-        // 🔵 CIRCULO
-        if (relacion > 0.8 && relacion < 1.2 && fillRatio > 0.5) {
-            forma = "CIRCULO";
-
-            // 🔺 TRIANGULO
-        } else if (fillRatio < 0.5) {
-            forma = "TRIANGULO";
-
-            // 🟦 RECTANGULO
-        } else {
-            forma = "RECTANGULO";
-        }
-
-        // Dibujar resultado
-        ctxForma.strokeStyle = "red";
-        ctxForma.lineWidth = 3;
-        ctxForma.strokeRect(minX, minY, w, h);
-
-        ctxForma.fillStyle = "white";
-        ctxForma.font = "20px Arial";
-        ctxForma.fillText(forma, minX, minY - 10);
-    }
-
-    info.textContent = `Color dominante: ${colorDominante} | Forma: ${forma}`;
+    info.textContent = `Color dominante: ${colorDominante}`;
 
     requestAnimationFrame(procesarFrame);
 }
