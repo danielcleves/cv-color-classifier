@@ -10,6 +10,15 @@ const ctxDominante = canvasDominante.getContext('2d');
 const canvasBinario = document.getElementById('canvasBinario');
 const ctxBinario = canvasBinario.getContext('2d');
 
+let model = null;
+
+async function cargarModelo() {
+    model = await tf.loadLayersModel('model.json');
+    console.log("Modelo cargado");
+}
+
+cargarModelo();
+
 // CHECKBOXES
 const chkRojo = document.getElementById('chkRojo');
 const chkVerde = document.getElementById('chkVerde');
@@ -204,7 +213,18 @@ function procesarFrame() {
 
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
         cv.GaussianBlur(gray, blur, new cv.Size(5, 5), 0);
-        cv.threshold(blur, thresh, 50, 255, cv.THRESH_BINARY_INV);
+        cv.threshold(blur, thresh, 100, 255, cv.THRESH_BINARY);
+        
+        // 🔥 LIMPIEZA DE RUIDO (AQUÍ VA)
+        let kernel = cv.Mat.ones(7, 7, cv.CV_8U);
+
+        // Cierra huecos grandes (clave para triángulo)
+        cv.morphologyEx(thresh, thresh, cv.MORPH_CLOSE, kernel);
+
+        // Suaviza bordes
+        cv.GaussianBlur(thresh, thresh, new cv.Size(5, 5), 0);
+
+        kernel.delete();
 
         cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
