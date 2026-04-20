@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Generador de Figuras + Ruido</title>
+    <style>
+        body {
+            background: #111;
+            color: #0f0;
+            font-family: monospace;
+            text-align: center;
+        }
+
+        canvas {
+            border: 2px solid #0f0;
+            margin-top: 10px;
+            cursor: crosshair;
+        }
+
+        button {
+            margin: 5px;
+            padding: 10px;
+            background: black;
+            color: #0f0;
+            border: 1px solid #0f0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Generador de Figuras + Ruido</h2>
+
+    <div>
+        <button onclick="drawShape('circle')">Círculo</button>
+        <button onclick="drawShape('square')">Cuadrado</button>
+        <button onclick="drawShape('triangle')">Triángulo</button>
+    </div>
+
+    <div>
+        <button onclick="setColor('white')">Pincel Blanco</button>
+        <button onclick="setColor('black')">Pincel Negro</button>
+        <button onclick="clearCanvas()">Limpiar</button>
+    </div>
+
+    <div>
+        <button onclick="downloadImage()">Descargar</button>
+    </div>
+
+    <canvas id="canvas" width="640" height="480"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let drawing = false;
+        let currentColor = 'white';
+
+        function setColor(color) {
+            currentColor = color;
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        clearCanvas();
+
+        // 🔥 GENERADOR DE FIGURAS
+        function drawShape(type) {
+            clearCanvas();
+
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+
+            // 🔥 tamaño aleatorio
+            const size = Math.random() * 120 + 60; // entre 60 y 180 aprox
+
+            // 🔥 posición aleatoria (evitando que se salga del canvas)
+            const margin = size + 10;
+            const cx = Math.random() * (canvas.width - 2 * margin) + margin;
+            const cy = Math.random() * (canvas.height - 2 * margin) + margin;
+
+            if (type === 'circle') {
+                ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+            }
+            else if (type === 'square') {
+                ctx.rect(cx - size / 2, cy - size / 2, size, size);
+            }
+            else if (type === 'triangle') {
+                const h = size;
+                ctx.moveTo(cx, cy - h / 2);
+                ctx.lineTo(cx - h / 2, cy + h / 2);
+                ctx.lineTo(cx + h / 2, cy + h / 2);
+                ctx.closePath();
+            }
+
+            ctx.fill();
+        }
+
+        // 🔥 EVENTOS DE DIBUJO
+        canvas.addEventListener('mousedown', () => drawing = true);
+        canvas.addEventListener('mouseup', () => drawing = false);
+        canvas.addEventListener('mouseleave', () => drawing = false);
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!drawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            drawWeirdBrush(x, y);
+        });
+
+        // 🔥 PINCEL IRREGULAR (ruido realista)
+        function drawWeirdBrush(x, y) {
+            ctx.fillStyle = currentColor;
+            ctx.strokeStyle = currentColor;
+
+            for (let i = 0; i < 25; i++) {
+                const offsetX = (Math.random() - 0.5) * 30;
+                const offsetY = (Math.random() - 0.5) * 30;
+                const size = Math.random() * 5 + 1;
+
+                if (Math.random() > 0.6) {
+                    ctx.fillRect(x + offsetX, y + offsetY, size, size);
+                } else {
+                    ctx.beginPath();
+                    ctx.moveTo(x + offsetX, y + offsetY);
+                    ctx.lineTo(x + offsetX + size * 3, y + offsetY + size);
+                    ctx.stroke();
+                }
+            }
+        }
+        // 🔥 DESCARGAR IMAGEN
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'imagen_ruido.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+
+</body>
+
+</html>

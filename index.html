@@ -14,9 +14,16 @@
     ```
     <h2>Seguimiento objeto por color</h2>
 
+    <div class="controls">
+        <button onclick="toggleCanvas('canvas')">Original</button>
+        <button onclick="toggleCanvas('canvasDominante')">Dominante</button>
+        <button onclick="toggleCanvas('canvasBinario')">Binario</button>
+    </div>
+
     <video id="video" width="640" height="480" autoplay playsinline></video>
     <canvas id="canvas" width="640" height="480"></canvas>
     <canvas id="canvasDominante" width="640" height="480"></canvas>
+    <canvas id="canvasBinario" width="640" height="480"></canvas>
 
     <p id="info"></p>
 
@@ -76,6 +83,7 @@
     </div>
 
     <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="JS/codigo.js"></script>
 
 </body>
