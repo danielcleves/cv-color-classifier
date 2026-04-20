@@ -7,6 +7,9 @@ const ctx = canvas.getContext('2d');
 const canvasDominante = document.getElementById('canvasDominante');
 const ctxDominante = canvasDominante.getContext('2d');
 
+const canvasBinario = document.getElementById('canvasBinario');
+const ctxBinario = canvasBinario.getContext('2d');
+
 // CHECKBOXES
 const chkRojo = document.getElementById('chkRojo');
 const chkVerde = document.getElementById('chkVerde');
@@ -154,6 +157,38 @@ function procesarFrame() {
     }
 
     ctxDominante.putImageData(frameDominante, 0, 0);
+
+    // 🔥 CANVAS BINARIO (blanco y negro)
+    const frameBinario = ctxBinario.createImageData(canvas.width, canvas.height);
+    const dataBinario = frameBinario.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+
+        let coincide = false;
+
+        if (colorDominante === "ROJO" && data[i] === 255 && data[i + 1] === 0 && data[i + 2] === 0) coincide = true;
+        if (colorDominante === "VERDE" && data[i] === 0 && data[i + 1] === 255 && data[i + 2] === 0) coincide = true;
+        if (colorDominante === "AZUL" && data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 255) coincide = true;
+        if (colorDominante === "NARANJA" && data[i] === 255 && data[i + 1] === 165 && data[i + 2] === 0) coincide = true;
+        if (colorDominante === "BLANCO" && data[i] === 255 && data[i + 1] === 255 && data[i + 2] === 255) coincide = true;
+        if (colorDominante === "NEGRO" && data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0) coincide = true;
+
+        if (coincide) {
+            // BLANCO (objeto)
+            dataBinario[i] = 255;
+            dataBinario[i + 1] = 255;
+            dataBinario[i + 2] = 255;
+            dataBinario[i + 3] = 255;
+        } else {
+            // NEGRO (fondo)
+            dataBinario[i] = 0;
+            dataBinario[i + 1] = 0;
+            dataBinario[i + 2] = 0;
+            dataBinario[i + 3] = 255;
+        }
+    }
+
+    ctxBinario.putImageData(frameBinario, 0, 0);
 
     // 🔥 OPENCV (formas)
     let figura = "Ninguna";
