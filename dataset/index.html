@@ -76,16 +76,25 @@
             ctx.fillStyle = 'white';
             ctx.beginPath();
 
+            // 🔥 tamaño aleatorio
+            const size = Math.random() * 120 + 60; // entre 60 y 180 aprox
+
+            // 🔥 posición aleatoria (evitando que se salga del canvas)
+            const margin = size + 10;
+            const cx = Math.random() * (canvas.width - 2 * margin) + margin;
+            const cy = Math.random() * (canvas.height - 2 * margin) + margin;
+
             if (type === 'circle') {
-                ctx.arc(320, 240, 100, 0, Math.PI * 2);
+                ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
             }
             else if (type === 'square') {
-                ctx.rect(220, 140, 200, 200);
+                ctx.rect(cx - size / 2, cy - size / 2, size, size);
             }
             else if (type === 'triangle') {
-                ctx.moveTo(320, 140);
-                ctx.lineTo(220, 340);
-                ctx.lineTo(420, 340);
+                const h = size;
+                ctx.moveTo(cx, cy - h / 2);
+                ctx.lineTo(cx - h / 2, cy + h / 2);
+                ctx.lineTo(cx + h / 2, cy + h / 2);
                 ctx.closePath();
             }
 
