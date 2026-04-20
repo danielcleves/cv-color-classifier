@@ -66,6 +66,11 @@ function opencvReady() {
 
 video.addEventListener('play', procesarFrame);
 
+function toggleCanvas(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('hidden');
+}
+
 function procesarFrame() {
 
     const config = getConfig();
